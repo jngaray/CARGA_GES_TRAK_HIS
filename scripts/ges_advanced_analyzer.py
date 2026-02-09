@@ -1,5 +1,6 @@
 import os
 import threading
+import glob
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
@@ -13,6 +14,12 @@ class GESAdvancedAnalyzer:
         self.root.geometry("900x700")
 
         self.processor = GESDataProcessor()
+        self.manual_mode = tk.BooleanVar(value=False)
+        self.manual_files = {
+            "consultas": None,
+            "farmacia": None,
+            "recetas_ges": [],
+        }
 
         self.setup_gui()
 
@@ -67,8 +74,9 @@ class GESAdvancedAnalyzer:
 
         files = [
             ("GES Population", "RUT_pob_ges.xlsx"),
-            ("Consultas", "reporte_consulta_ago.csv"),
-            ("Farmacia", "reporte_farmacia_ago.csv"),
+            ("Consultas", "reporte_consulta_*.csv"),
+            ("Farmacia", "reporte_farmacia_*.csv"),
+            ("Recetas GES", "recetas*.xls"),
             ("Medicamentos GES", "Medicamentos GES (1).xlsx"),
             ("Clasificación Paliativos", "clasificacion_paliativos.csv"),
             ("Severidad FQ", "severidad_FQ.xlsx"),
@@ -274,6 +282,50 @@ Nota: Los códigos trazadora están configurados en ges_config.py
             paths_frame, text=f"Outputs: {self.processor.outputs_path}", font=("Courier", 9)
         ).pack(anchor="w", padx=10, pady=2)
 
+        # Selección manual de archivos
+        manual_frame = tk.LabelFrame(
+            config_frame, text="Selección manual de archivos", font=("Arial", 12, "bold")
+        )
+        manual_frame.pack(fill="x", padx=10, pady=10)
+
+        tk.Checkbutton(
+            manual_frame,
+            text="Usar selección manual",
+            variable=self.manual_mode,
+            command=self.toggle_manual_mode,
+        ).pack(anchor="w", padx=10, pady=5)
+
+        self.manual_labels = {
+            "consultas": tk.StringVar(value="No seleccionado"),
+            "farmacia": tk.StringVar(value="No seleccionado"),
+            "recetas_ges": tk.StringVar(value="No seleccionado"),
+        }
+
+        self._add_manual_selector(
+            manual_frame,
+            "Consultas (CSV)",
+            self.manual_labels["consultas"],
+            self.select_consultas_file,
+        )
+        self._add_manual_selector(
+            manual_frame,
+            "Farmacia (CSV)",
+            self.manual_labels["farmacia"],
+            self.select_farmacia_file,
+        )
+        self._add_manual_selector(
+            manual_frame,
+            "Recetas GES (XLS/XLSX)",
+            self.manual_labels["recetas_ges"],
+            self.select_recetas_files,
+        )
+
+        tk.Button(
+            manual_frame,
+            text="Limpiar selección",
+            command=self.clear_manual_selection,
+        ).pack(anchor="w", padx=10, pady=5)
+
         # Botones de configuración
         config_buttons = tk.Frame(config_frame)
         config_buttons.pack(fill="x", padx=10, pady=10)
@@ -311,6 +363,68 @@ Nota: Los códigos trazadora están configurados en ges_config.py
         self.results_text.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
+    def _add_manual_selector(self, parent, label, var, command):
+        row = tk.Frame(parent)
+        row.pack(fill="x", padx=10, pady=2)
+        tk.Label(row, text=f"{label}:", width=22, anchor="w").pack(side="left")
+        tk.Label(row, textvariable=var, anchor="w").pack(side="left", padx=6, fill="x", expand=True)
+        tk.Button(row, text="Seleccionar", command=command).pack(side="right")
+
+    def toggle_manual_mode(self):
+        self.processor.auto_select_files = not self.manual_mode.get()
+        mode = "manual" if self.manual_mode.get() else "automático"
+        self.log_message(f"🔧 Modo de selección: {mode}")
+
+    def select_consultas_file(self):
+        filename = filedialog.askopenfilename(
+            title="Seleccionar archivo de CONSULTAS",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            initialdir=self.processor.inputs_path,
+        )
+        if filename:
+            self.manual_mode.set(True)
+            self.processor.auto_select_files = False
+            self.manual_files["consultas"] = filename
+            self.processor.selected_files["consultas"] = filename
+            self.manual_labels["consultas"].set(os.path.basename(filename))
+            self.log_message(f"✅ Consultas seleccionadas: {os.path.basename(filename)}")
+
+    def select_farmacia_file(self):
+        filename = filedialog.askopenfilename(
+            title="Seleccionar archivo de FARMACIA",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            initialdir=self.processor.inputs_path,
+        )
+        if filename:
+            self.manual_mode.set(True)
+            self.processor.auto_select_files = False
+            self.manual_files["farmacia"] = filename
+            self.processor.selected_files["farmacia"] = filename
+            self.manual_labels["farmacia"].set(os.path.basename(filename))
+            self.log_message(f"✅ Farmacia seleccionada: {os.path.basename(filename)}")
+
+    def select_recetas_files(self):
+        filenames = filedialog.askopenfilenames(
+            title="Seleccionar archivos de RECETAS GES",
+            filetypes=[("Excel files", "*.xlsx;*.xls"), ("All files", "*.*")],
+            initialdir=self.processor.inputs_path,
+        )
+        if filenames:
+            self.manual_mode.set(True)
+            self.processor.auto_select_files = False
+            self.manual_files["recetas_ges"] = list(filenames)
+            self.processor.selected_files["recetas_ges"] = list(filenames)
+            self.manual_labels["recetas_ges"].set(f"{len(filenames)} archivos")
+            self.log_message(f"✅ Recetas GES seleccionadas: {len(filenames)} archivos")
+
+    def clear_manual_selection(self):
+        self.manual_files = {"consultas": None, "farmacia": None, "recetas_ges": []}
+        self.processor.selected_files = {}
+        self.manual_labels["consultas"].set("No seleccionado")
+        self.manual_labels["farmacia"].set("No seleccionado")
+        self.manual_labels["recetas_ges"].set("No seleccionado")
+        self.log_message("🧹 Selección manual limpiada")
+
     def update_status(self, message, color="blue"):
         """Actualizar mensaje de estado"""
         self.status_label.config(text=message, fg=color)
@@ -327,13 +441,23 @@ Nota: Los códigos trazadora están configurados en ges_config.py
         self.update_status("Verificando archivos...", "orange")
 
         for filename, status_label in self.file_status.items():
-            filepath = os.path.join(self.processor.inputs_path, filename)
-            if os.path.exists(filepath):
-                status_label.config(text="✅ Encontrado", fg="green")
-                self.log_message(f"✅ {filename} encontrado")
+            if any(ch in filename for ch in ["*", "?"]):
+                pattern = os.path.join(self.processor.inputs_path, filename)
+                matches = glob.glob(pattern)
+                if matches:
+                    status_label.config(text=f"✅ Encontrado ({len(matches)})", fg="green")
+                    self.log_message(f"✅ {filename} encontrado: {len(matches)} archivo(s)")
+                else:
+                    status_label.config(text="❌ No encontrado", fg="red")
+                    self.log_message(f"❌ {filename} no encontrado")
             else:
-                status_label.config(text="❌ No encontrado", fg="red")
-                self.log_message(f"❌ {filename} no encontrado")
+                filepath = os.path.join(self.processor.inputs_path, filename)
+                if os.path.exists(filepath):
+                    status_label.config(text="✅ Encontrado", fg="green")
+                    self.log_message(f"✅ {filename} encontrado")
+                else:
+                    status_label.config(text="❌ No encontrado", fg="red")
+                    self.log_message(f"❌ {filename} no encontrado")
 
         self.update_status("Verificación completada", "green")
 
@@ -347,6 +471,14 @@ Nota: Los códigos trazadora están configurados en ges_config.py
                 self.log_message("🚀 Iniciando análisis completo V2.0...")
                 self.log_message("⭐ Funcionalidades: Trazadoras Múltiples | Verificación GES | Sin Duplicados")
                 
+                # Configurar modo de selección
+                self.processor.auto_select_files = not self.manual_mode.get()
+                if self.manual_mode.get():
+                    if not self.processor.selected_files.get("consultas") or not self.processor.selected_files.get("farmacia"):
+                        self.log_message("❌ Faltan archivos requeridos (consultas/farmacia) en selección manual")
+                        self.update_status("Faltan archivos en selección manual", "red")
+                        return
+
                 # Cargar todos los datos incluyendo nuevos archivos
                 self.log_message("📁 Cargando archivos de datos...")
                 self.processor.load_data()
@@ -358,7 +490,9 @@ Nota: Los códigos trazadora están configurados en ges_config.py
                 
                 # Procesar medicamentos con nuevas funcionalidades
                 self.log_message("💊 Procesando medicamentos (con verificación población GES)...")
-                archivo_medicamentos = "archivo_farmacia_ges_completo.xlsx"
+                archivo_medicamentos = os.path.join(
+                    self.processor.outputs_path, "archivo_farmacia_ges_completo.xlsx"
+                )
                 self.processor.procesar_medicamentos_para_carga(
                     self.processor.farmacia_df, 
                     archivo_medicamentos
@@ -366,7 +500,9 @@ Nota: Los códigos trazadora están configurados en ges_config.py
                 
                 # Procesar consultas
                 self.log_message("🏥 Procesando consultas (eliminando duplicados)...")
-                archivo_consultas = "archivo_consultas_ges_completo.xlsx"
+                archivo_consultas = os.path.join(
+                    self.processor.outputs_path, "archivo_consultas_ges_completo.xlsx"
+                )
                 self.processor.procesar_consultas_para_carga(
                     self.processor.consulta_df,
                     archivo_consultas
@@ -431,6 +567,7 @@ Nota: Los códigos trazadora están configurados en ges_config.py
         self.update_status("Analizando medicamentos...", "orange")
 
         try:
+            self.processor.auto_select_files = not self.manual_mode.get()
             self.processor.load_data()
             self.processor.analizar_medicamentos_ges()
 
@@ -469,9 +606,14 @@ Nota: Los códigos trazadora están configurados en ges_config.py
         """Generar archivo de consultas"""
         self.update_status("Generando archivo de consultas...", "orange")
         try:
+            self.processor.auto_select_files = not self.manual_mode.get()
             self.processor.load_data()
-            self.processor.procesar_consultas_para_carga()
-            self.processor.generar_archivos_carga()
+            archivo_consultas = os.path.join(
+                self.processor.outputs_path, "archivo_consultas_ges_completo.xlsx"
+            )
+            self.processor.procesar_consultas_para_carga(
+                self.processor.consulta_df, archivo_consultas
+            )
             self.log_message("✅ Archivo de consultas generado")
             self.update_status("Archivo generado", "green")
         except Exception as e:
@@ -482,9 +624,14 @@ Nota: Los códigos trazadora están configurados en ges_config.py
         """Generar archivo de medicamentos"""
         self.update_status("Generando archivo de medicamentos...", "orange")
         try:
+            self.processor.auto_select_files = not self.manual_mode.get()
             self.processor.load_data()
-            self.processor.procesar_medicamentos_para_carga()
-            self.processor.generar_archivos_carga()
+            archivo_medicamentos = os.path.join(
+                self.processor.outputs_path, "archivo_farmacia_ges_completo.xlsx"
+            )
+            self.processor.procesar_medicamentos_para_carga(
+                self.processor.farmacia_df, archivo_medicamentos
+            )
             self.log_message("✅ Archivo de medicamentos generado")
             self.update_status("Archivo generado", "green")
         except Exception as e:
@@ -498,10 +645,20 @@ Nota: Los códigos trazadora están configurados en ges_config.py
 
         def generate():
             try:
+                self.processor.auto_select_files = not self.manual_mode.get()
                 self.processor.load_data()
-                self.processor.procesar_consultas_para_carga()
-                self.processor.procesar_medicamentos_para_carga()
-                self.processor.generar_archivos_carga()
+                archivo_consultas = os.path.join(
+                    self.processor.outputs_path, "archivo_consultas_ges_completo.xlsx"
+                )
+                archivo_medicamentos = os.path.join(
+                    self.processor.outputs_path, "archivo_farmacia_ges_completo.xlsx"
+                )
+                self.processor.procesar_consultas_para_carga(
+                    self.processor.consulta_df, archivo_consultas
+                )
+                self.processor.procesar_medicamentos_para_carga(
+                    self.processor.farmacia_df, archivo_medicamentos
+                )
                 self.log_message("✅ Archivos de carga generados")
                 self.update_status("Archivos generados", "green")
             except Exception as e:

@@ -1,6 +1,7 @@
 # Sensible data
 /inputs/
 /outputs/
+/logs/
 
 # Generated outputs in root
 archivo_*.xlsx

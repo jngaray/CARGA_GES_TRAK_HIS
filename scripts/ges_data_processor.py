@@ -78,6 +78,31 @@ class GESDataProcessor:
             print(f"❌ Error en selección de archivo: {e}")
             return None
 
+    def select_files_dialog(self, title, filetypes):
+        """Seleccionar múltiples archivos mediante diálogo"""
+        try:
+            root = tk.Tk()
+            root.withdraw()  # Ocultar ventana principal
+
+            file_paths = filedialog.askopenfilenames(
+                title=title,
+                initialdir=self.inputs_path,
+                filetypes=filetypes,
+            )
+
+            root.destroy()
+
+            if file_paths:
+                print(f"✓ Archivos seleccionados: {len(file_paths)}")
+                return list(file_paths)
+            else:
+                print("⚠️  No se seleccionaron archivos")
+                return []
+
+        except Exception as e:
+            print(f"❌ Error en selección de archivos: {e}")
+            return []
+
     def setup_input_files(self, month_filter=None):
         """Configurar archivos de entrada según el modo seleccionado"""
         print("\n📁 CONFIGURANDO ARCHIVOS DE ENTRADA...")
@@ -150,22 +175,35 @@ class GESDataProcessor:
                     
         else:
             print("👆 Modo manual: Selecciona los archivos...")
+
+            # Si ya están preconfigurados, no abrir diálogos
+            if self.selected_files.get('consultas') and self.selected_files.get('farmacia'):
+                print("✓ Archivos manuales ya configurados, omitiendo selección")
+            else:
             
-            # Seleccionar archivo de consultas
-            consultas_file = self.select_file_dialog(
-                "Seleccionar archivo de CONSULTAS",
-                [("CSV files", "*.csv"), ("All files", "*.*")]
-            )
-            if consultas_file:
-                self.selected_files['consultas'] = consultas_file
-            
-            # Seleccionar archivo de farmacia
-            farmacia_file = self.select_file_dialog(
-                "Seleccionar archivo de FARMACIA", 
-                [("CSV files", "*.csv"), ("All files", "*.*")]
-            )
-            if farmacia_file:
-                self.selected_files['farmacia'] = farmacia_file
+                # Seleccionar archivo de consultas
+                consultas_file = self.select_file_dialog(
+                    "Seleccionar archivo de CONSULTAS",
+                    [("CSV files", "*.csv"), ("All files", "*.*")]
+                )
+                if consultas_file:
+                    self.selected_files['consultas'] = consultas_file
+                
+                # Seleccionar archivo de farmacia
+                farmacia_file = self.select_file_dialog(
+                    "Seleccionar archivo de FARMACIA", 
+                    [("CSV files", "*.csv"), ("All files", "*.*")]
+                )
+                if farmacia_file:
+                    self.selected_files['farmacia'] = farmacia_file
+
+                # Seleccionar archivos de recetas GES (opcional, permite múltiples)
+                recetas_files = self.select_files_dialog(
+                    "Seleccionar archivos de RECETAS GES (opcional)",
+                    [("Excel files", "*.xlsx;*.xls"), ("All files", "*.*")],
+                )
+                if recetas_files:
+                    self.selected_files['recetas_ges'] = recetas_files
         
         # Mostrar resumen
         print("\n📋 ARCHIVOS CONFIGURADOS:")

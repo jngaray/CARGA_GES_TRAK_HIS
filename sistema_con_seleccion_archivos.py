@@ -37,21 +37,13 @@ def main():
         print("❌ Operación cancelada por el usuario")
         return
     
-    # Crear processor
-    processor = GESDataProcessor()
+    # Crear processor según modo
+    processor = GESDataProcessor(auto_select_files=not selection_mode)
     
     try:
         if selection_mode:  # Seleccionar archivos manualmente
             print("\n📂 MODO: Selección manual de archivos")
-            selected_files = processor.select_input_files()
-            
-            if not selected_files:
-                print("❌ No se seleccionaron archivos suficientes")
-                return
-            
-            # Cargar archivos seleccionados
-            success = processor.load_data_from_selected_files(selected_files)
-            
+            success = processor.load_data()
         else:  # Usar archivos predeterminados
             print("\n📁 MODO: Archivos predeterminados")
             print("Cargando archivos desde la carpeta 'inputs'...")
@@ -61,19 +53,13 @@ def main():
             print("❌ Error al cargar los datos")
             return
         
-        # Cargar archivos adicionales si no se cargaron en el paso anterior
-        if selection_mode:
-            print("\n📊 Cargando archivos de configuración adicionales...")
-        else:
-            processor.load_medicamentos_ges()
-            processor.load_clasificacion_paliativos()
-            processor.load_severidad_fq()
-        
         print("✅ Archivos cargados exitosamente")
         
         # Ejecutar procesamiento completo de medicamentos
         print("\n💊 Procesando medicamentos para carga...")
-        archivo_salida_medicamentos = "archivo_farmacia_ges_completo.xlsx"
+        archivo_salida_medicamentos = os.path.join(
+            processor.outputs_path, "archivo_farmacia_ges_completo.xlsx"
+        )
         
         processor.procesar_medicamentos_para_carga(
             processor.farmacia_df, 
@@ -84,7 +70,9 @@ def main():
         
         # Ejecutar procesamiento completo de consultas
         print("\n👥 Procesando consultas para carga...")
-        archivo_salida_consultas = "archivo_consultas_ges_completo.xlsx"
+        archivo_salida_consultas = os.path.join(
+            processor.outputs_path, "archivo_consultas_ges_completo.xlsx"
+        )
         
         processor.procesar_consultas_para_carga(
             processor.consulta_df,
@@ -114,7 +102,7 @@ def main():
             "Los archivos GES han sido generados exitosamente!\n\n"
             f"✅ {archivo_salida_consultas}\n"
             f"✅ {archivo_salida_medicamentos}\n\n"
-            "Los archivos están en el directorio principal."
+            "Los archivos están en la carpeta 'outputs'."
         )
         root.destroy()
         
