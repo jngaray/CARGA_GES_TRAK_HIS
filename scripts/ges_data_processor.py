@@ -241,6 +241,8 @@ class GESDataProcessor:
             if 'consultas' in self.selected_files and self.selected_files['consultas']:
                 self.consulta_df = self.load_csv_safely(self.selected_files['consultas'])
                 if self.consulta_df is not None:
+                    # Normalizar DV a mayúsculas
+                    self.consulta_df = self.normalize_dv_in_dataframe(self.consulta_df)
                     print(f"✓ Consultas: {len(self.consulta_df)} registros")
             else:
                 print("⚠️  No se configuró archivo de consultas")
@@ -249,6 +251,8 @@ class GESDataProcessor:
             if 'farmacia' in self.selected_files and self.selected_files['farmacia']:
                 self.farmacia_df = self.load_csv_safely(self.selected_files['farmacia'])
                 if self.farmacia_df is not None:
+                    # Normalizar DV a mayúsculas
+                    self.farmacia_df = self.normalize_dv_in_dataframe(self.farmacia_df)
                     # Combinar RUT
                     self.farmacia_df["RUT_Combined"] = [
                         self.format_rut(row["RutPaciente"], row["DVPaciente"])
@@ -655,6 +659,9 @@ class GESDataProcessor:
                 df.columns = df.columns.str.upper()
                 df_renamed = df.rename(columns=column_mapping)
                 
+                # Normalizar DV a mayúsculas
+                df_renamed = self.normalize_dv_in_dataframe(df_renamed)
+                
                 # Verificar columnas críticas
                 required = ['FechaEmision', 'RutPaciente', 'DVPaciente', 'Farmaco_Desc']
                 missing = [col for col in required if col not in df_renamed.columns]
@@ -690,9 +697,17 @@ class GESDataProcessor:
             self.recetas_ges_df = None
 
     def load_csv_safely(self, filename, separator=";"):
-        """Cargar CSV con manejo de errores"""
+        """Cargar CSV con manejo de errores y normalización de DV"""
         try:
-            return pd.read_csv(filename, sep=separator, encoding="latin-1", on_bad_lines="skip")
+            df = pd.read_csv(filename, sep=separator, encoding="latin-1", on_bad_lines="skip")
+            
+            # Normalizar DV a mayúsculas si existe columna DV
+            dv_columns = [col for col in df.columns if col.upper().strip() in ['DV', 'DIGITO', 'DÍGITO', 'DVV']]
+            for col in dv_columns:
+                if col in df.columns:
+                    df[col] = df[col].astype(str).str.upper()
+            
+            return df
         except Exception as e:
             print(f"❌ Error cargando {filename}: {e}")
             return None
@@ -705,12 +720,26 @@ class GESDataProcessor:
             # Convert float to int if needed
             if isinstance(rut_number, float):
                 rut_number = int(rut_number)
-            # Clean DV
-            dv = str(dv).strip()
+            # Clean DV and normalize to uppercase (K can be lowercase or uppercase)
+            dv = str(dv).strip().upper()
             return f"{rut_number}-{dv}"
         except:
             return None
 
+    def normalize_dv_in_dataframe(self, df):
+        """Normalizar columnas DV a mayúsculas en un dataframe"""
+        if df is None:
+            return df
+        
+        # Buscar columnas DV/DígitoDV (varias variaciones posibles)
+        dv_col_variations = ['DV', 'DVPaciente', 'DIGITO', 'DÍGITO', 'DV_PACIENTE', 'DIGITO_PACIENTE', 'DVV']
+        
+        for col in df.columns:
+            if col.upper() in [v.upper() for v in dv_col_variations]:
+                if col in df.columns and df[col].dtype == 'object':
+                    df[col] = df[col].astype(str).str.strip().str.upper()
+        
+        return df
 
     def get_ges_condition(self, rut):
         """Obtener condición GES de un paciente"""
