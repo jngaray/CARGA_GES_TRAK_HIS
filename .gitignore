@@ -1,0 +1,32 @@
+# Sensible data
+/inputs/
+/outputs/
+
+# Generated outputs in root
+archivo_*.xlsx
+archivo_*.csv
+archivo_*.txt
+CARGA_*.xls
+CARGA_*.xlsx
+REPORTE_*.txt
+ANALISIS_*.txt
+test_*_output*.xlsx
+test_run_*.xlsx
+output_test.txt
+system_output.txt
+salida.txt
+RESUMEN_FINAL.txt
+
+# Evitar subir hojas de cálculo con datos
+*.xls
+*.xlsx
+*.csv
+
+# Python artifacts
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/

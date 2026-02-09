@@ -1,0 +1,36 @@
+================================================================
+                   SISTEMA GES V2.0
+          Instituto Nacional de Enfermedades
+         Respiratorias y Cirugia Toracica
+================================================================
+
+🚀 INICIO RAPIDO:
+
+1. INSTALAR SISTEMA:
+   > Doble clic en INSTALAR_V2.bat
+
+2. AGREGAR ARCHIVOS DE DATOS:
+   > Colocar archivos en carpeta 'inputs\'
+   > RUT_pob_ges.xlsx (obligatorio)
+   > reporte_consulta_ago.csv
+   > reporte_farmacia_ago.csv
+
+3. EJECUTAR SISTEMA:
+   > Doble clic en EJECUTAR_GUI.bat (recomendado)
+   > O: python sistema_completo_final.py
+
+4. RESULTADOS:
+   > Archivos generados en carpeta 'outputs\'
+
+================================================================
+MEJORAS V2.0:
+• Trazadoras múltiples (ASMA: 6, FIBROSIS: 4)
+• Verificación automática población GES
+• Eliminación de duplicados
+• Nueva lógica paliativos oncológicos
+• Archivos de casos para revisión
+================================================================
+
+📚 DOCUMENTACION COMPLETA: README_V2.md
+🔧 VERIFICACION SISTEMA: python verificacion_final_v2.py
+================================================================
