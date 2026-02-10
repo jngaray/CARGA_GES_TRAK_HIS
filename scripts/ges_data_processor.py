@@ -1103,14 +1103,12 @@ class GESDataProcessor:
                         # Omitir este registro
                         continue
 
-                    # Normalizar FECHA a string "dd-mm-YYYY" para evitar mezclas de tipos
-                    # (antes se guardaba como datetime/pd.Timestamp y eso podía crear
-                    # claves únicas distintas cuando se concatenaba para deduplicar).
+                    # Usar datetime object para FECHA (igual que en consultas)
                     fecha_formateada = None
                     try:
-                        fecha_formateada = self.format_date_for_excel(fecha_medicamento).strftime("%d-%m-%Y")
+                        fecha_formateada = self.format_date_for_excel(fecha_medicamento)
                     except Exception:
-                        fecha_formateada = str(fecha_medicamento) if fecha_medicamento is not None else ""
+                        fecha_formateada = datetime.now()
 
                     registro = {
                         "FECHA": fecha_formateada,
