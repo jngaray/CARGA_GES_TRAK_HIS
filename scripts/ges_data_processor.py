@@ -1200,10 +1200,11 @@ class GESDataProcessor:
             if "MEDICAMENTO" in df_resultado.columns:
                 df_resultado = df_resultado.drop("MEDICAMENTO", axis=1)
 
-            # Eliminar filas donde la primera columna FECHA esté vacía o nula
+            # Eliminar filas donde FECHA esté vacía o nula
+            # FECHA ahora es datetime object, solo verificar si es nulo
             if "FECHA" in df_resultado.columns:
                 conteo_before = len(df_resultado)
-                df_resultado = df_resultado[~(df_resultado["FECHA"].isnull() | (df_resultado["FECHA"].astype(str).str.strip() == ""))]
+                df_resultado = df_resultado[df_resultado["FECHA"].notnull()]
                 removed = conteo_before - len(df_resultado)
                 if removed > 0:
                     print(f"⚠️ Se eliminaron {removed} filas sin fecha del output final")
