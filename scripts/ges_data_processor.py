@@ -1191,9 +1191,14 @@ class GESDataProcessor:
 
         # Procesar agrupación por RUT manteniendo códigos excluyentes separados
         print(f"📋 Agrupando medicamentos por RUT...")
+        total_before_dedup = sum(len(meds) for meds in medicamentos_agrupados.values())
         for rut, medicamentos_rut in medicamentos_agrupados.items():
             medicamentos_finales = self.agrupar_medicamentos_por_rut(medicamentos_rut)
             medicamentos_procesados.extend(medicamentos_finales)
+        total_after_dedup = len(medicamentos_procesados)
+        print(f"   📊 Antes de deduplicar: {total_before_dedup} registros")
+        print(f"   📊 Después de deduplicar: {total_after_dedup} registros")
+        print(f"   📊 Eliminados por duplicados: {total_before_dedup - total_after_dedup}")
 
         # Crear DataFrame y guardar archivo en formato Excel
         if medicamentos_procesados:
