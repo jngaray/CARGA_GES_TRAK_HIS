@@ -485,6 +485,7 @@ Nota: Los códigos trazadora están configurados en ges_config.py
                 self.processor.load_medicamentos_ges()
                 self.processor.load_clasificacion_paliativos()
                 self.processor.load_severidad_fq()
+                self.processor.load_recetas_ges()  # Cargar recetas GES
                 
                 self.log_message("✅ Archivos cargados correctamente")
                 

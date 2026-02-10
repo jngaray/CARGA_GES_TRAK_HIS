@@ -27,7 +27,9 @@ try:
     
     # Ejecutar procesamiento completo de medicamentos
     print("\n📊 Procesando medicamentos para carga...")
-    archivo_salida_medicamentos = "archivo_farmacia_ges_completo.xlsx"
+    archivo_salida_medicamentos = os.path.join(
+        processor.outputs_path, "archivo_farmacia_ges_completo.xlsx"
+    )
     
     # Usar el método que genera archivos de salida
     processor.procesar_medicamentos_para_carga(
@@ -39,7 +41,9 @@ try:
     
     # Ejecutar procesamiento completo de consultas
     print("\n📊 Procesando consultas para carga...")
-    archivo_salida_consultas = "archivo_consultas_ges_completo.xlsx"
+    archivo_salida_consultas = os.path.join(
+        processor.outputs_path, "archivo_consultas_ges_completo.xlsx"
+    )
     
     processor.procesar_consultas_para_carga(
         processor.consulta_df,
