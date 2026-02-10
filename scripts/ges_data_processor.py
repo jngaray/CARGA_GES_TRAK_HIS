@@ -1416,8 +1416,9 @@ class GESDataProcessor:
             return medicamentos_rut
 
         # Ordenar primero por fecha para mantener la más reciente
+        # FECHA ya es datetime object, no necesita conversión
         medicamentos_rut_sorted = sorted(medicamentos_rut, 
-                                       key=lambda x: pd.to_datetime(x.get("FECHA"), format="%d-%m-%Y", errors='coerce'), 
+                                       key=lambda x: x.get("FECHA") if isinstance(x.get("FECHA"), (pd.Timestamp, datetime)) else pd.to_datetime(x.get("FECHA"), errors='coerce'), 
                                        reverse=True)
 
         # Deduplicar por RUT + PRESTACIÓN: mantener SOLO el más reciente
