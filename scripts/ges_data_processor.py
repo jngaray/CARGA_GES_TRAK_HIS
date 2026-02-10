@@ -1091,7 +1091,7 @@ class GESDataProcessor:
                         fecha_medicamento = ""
 
                     # Si no hay fecha, registrar el caso y omitirlo del output
-                    if not fecha_medicamento or str(fecha_medicamento).strip() == "":
+                    if pd.isna(fecha_medicamento) or str(fecha_medicamento).strip() == "":
                         casos_sin_fecha.append({
                             "RUT_Combined": rut_paciente,
                             "Farmaco_Desc": medicamento.get("Farmaco_Desc", ""),
@@ -1107,7 +1107,9 @@ class GESDataProcessor:
                     fecha_formateada = None
                     try:
                         fecha_formateada = self.format_date_for_excel(fecha_medicamento)
-                    except Exception:
+                    except Exception as e:
+                        # Si falla el parseo, usar fecha actual como fallback
+                        print(f"⚠️ Error parseando fecha para RUT {rut_paciente}: {fecha_medicamento} - usando fecha actual")
                         fecha_formateada = datetime.now()
 
                     registro = {
