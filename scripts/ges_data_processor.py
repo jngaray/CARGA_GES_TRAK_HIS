@@ -1310,6 +1310,10 @@ class GESDataProcessor:
                 # Mapeo específico de medicamentos FQ con detección mejorada
                 medicamento_lower = medicamento_desc.lower()
                 
+                # TRIKAFTA - medicamento específico para FQ con código 2508141
+                if "trikafta" in medicamento_lower or "trikafta" in medicamento_desc.lower():
+                    return "2508141"  # TRIKAFTA - Código específico
+                
                 # TOBRAMICINA - detección ampliada para diferentes presentaciones
                 if any(keyword in medicamento_lower for keyword in [
                     "tobramicina", "tobrex", "bramitob", "nebcin"
@@ -1340,6 +1344,11 @@ class GESDataProcessor:
             elif condition == "ASMA":
                 medicamento_lower = medicamento_desc.lower()
                 print(f"🔬 DEBUG ASMA: {medicamento_desc[:50]}... → lower: {medicamento_lower[:50]}...")
+                
+                # MEPOLIZUMAB Y OMALIZUMAB - medicamentos biológicos específicos con código 2508156
+                if any(keyword in medicamento_lower for keyword in ["mepolizumab", "omalizumab"]):
+                    print(f"🎯 DETECTADO MEPOLIZUMAB/OMALIZUMAB → 2508156")
+                    return "2508156"  # Código específico para biológicos de ASMA
                 
                 # Mapeo específico de medicamentos ASMA según arancel (orden de prioridad)
                 # 1. SALBUTAMOL - broncodilatador específico
